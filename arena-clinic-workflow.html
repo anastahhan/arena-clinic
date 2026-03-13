@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Arena Clinic Workflow</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#f5f2ee;--surface:#fff;--surface2:#f0ece6;--border:#e2ddd7;--text:#1a1714;--text2:#6b6560;--accent:#2d6a4f;--accent-light:#d8f3dc;--danger:#c1440e;--danger-light:#fde8df;--warn:#b5700a;--warn-light:#fef3e2;--r:12px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+body.ar{font-family:'Tajawal',sans-serif;direction:rtl;}
+
+/* ── SETUP SCREEN ── */
+#setupScreen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;}
+#setupScreen.hidden{display:none;}
+.setup-box{background:var(--surface);border-radius:20px;padding:36px;max-width:560px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.12);}
+.setup-logo{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.setup-logo-icon{width:44px;height:44px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;}
+.setup-logo-txt{font-family:'DM Serif Display',serif;font-size:22px;color:var(--accent);}
+.setup-title{font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:6px;}
+.setup-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6;}
+.setup-step{background:var(--surface2);border-radius:10px;padding:14px 16px;margin-bottom:12px;border:1px solid var(--border);}
+.setup-step-num{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+.setup-step p{font-size:13px;color:var(--text2);line-height:1.6;}
+.setup-step a{color:var(--accent);font-weight:600;}
+.setup-step code{background:#e8f5e9;padding:2px 6px;border-radius:4px;font-size:12px;font-family:monospace;color:var(--accent);}
+.setup-inputs{display:flex;flex-direction:column;gap:10px;margin:20px 0;}
+.setup-inputs input{padding:10px 13px;border-radius:8px;border:1px solid var(--border);font-size:14px;font-family:inherit;outline:none;}
+.setup-inputs input:focus{border-color:var(--accent);}
+.setup-err{color:var(--danger);font-size:13px;margin-top:-4px;display:none;}
+
+/* ── LOGIN SCREEN ── */
+#loginScreen{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;}
+#loginScreen.hidden{display:none;}
+.login-box{background:var(--surface);border-radius:20px;padding:36px;max-width:400px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.12);}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;}
+.login-logo-icon{width:42px;height:42px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;}
+.login-logo-txt{font-family:'DM Serif Display',serif;font-size:20px;color:var(--accent);}
+.login-title{font-size:22px;font-family:'DM Serif Display',serif;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
+.login-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.login-field label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);}
+.login-field input{padding:10px 13px;border-radius:8px;border:1px solid var(--border);font-size:14px;font-family:inherit;outline:none;transition:border-color .15s;}
+.login-field input:focus{border-color:var(--accent);background:#fff;}
+.login-err{color:var(--danger);font-size:13px;margin-bottom:10px;display:none;}
+.login-btn{width:100%;padding:11px;border-radius:8px;background:var(--accent);color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:6px;}
+.login-btn:hover{background:#235c42;}
+.login-lang{text-align:center;margin-top:16px;font-size:13px;color:var(--text2);}
+.login-lang button{background:none;border:none;color:var(--accent);font-weight:600;cursor:pointer;font-family:inherit;font-size:13px;}
+
+/* ── TOP BAR ── */
+#topbar{position:fixed;top:0;left:0;right:0;height:48px;background:var(--accent);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:100;}
+#topbar-left{display:flex;align-items:center;gap:12px;}
+#topbar span.clinic-name{color:#fff;font-size:13px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;}
+.user-pill{display:flex;align-items:center;gap:8px;}
+.user-pill .uname{color:#fff;font-size:13px;font-weight:500;}
+.user-pill .urole{background:rgba(255,255,255,.2);color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;text-transform:uppercase;}
+#logoutBtn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;padding:4px 12px;border-radius:20px;cursor:pointer;font-size:12px;font-family:inherit;margin-left:8px;}
+#langBtn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;padding:4px 12px;border-radius:20px;cursor:pointer;font-size:13px;font-family:inherit;}
+
+/* ── LAYOUT ── */
+#wrap{display:flex;padding-top:48px;height:100vh;}
+#sidebar{width:210px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:calc(100vh - 48px);overflow-y:auto;flex-shrink:0;}
+body.ar #sidebar{border-right:none;border-left:1px solid var(--border);}
+.logo{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.logo-icon{width:32px;height:32px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;}
+.logo-txt{font-family:'DM Serif Display',serif;font-size:15px;color:var(--accent);line-height:1.2;}
+nav{padding:12px 10px;}
+.nlabel{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);padding:10px 8px 4px;}
+.nitem{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text2);border:none;background:none;width:100%;text-align:left;margin-bottom:2px;font-family:inherit;}
+body.ar .nitem{text-align:right;}
+.nitem:hover{background:var(--surface2);color:var(--text);}
+.nitem.on{background:var(--accent-light);color:var(--accent);}
+#main{flex:1;overflow-y:auto;padding:28px;}
+.pg{display:none;}.pg.on{display:block;}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap;}
+.ptitle{font-family:'DM Serif Display',serif;font-size:26px;}
+body.ar .ptitle{font-family:'Tajawal',sans-serif;font-weight:700;}
+.psub{font-size:13px;color:var(--text2);margin-top:2px;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;font-family:inherit;}
+.btn-p{background:var(--accent);color:#fff;}.btn-p:hover{background:#235c42;}
+.btn-s{background:var(--surface);border:1px solid var(--border);color:var(--text);}.btn-s:hover{background:var(--surface2);}
+.btn-d{background:var(--danger-light);color:var(--danger);border:1px solid #f5c5b3;}
+.btn-sm{padding:5px 11px;font-size:12px;}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;}
+.sval{font-family:'DM Serif Display',serif;font-size:30px;color:var(--accent);line-height:1;}
+body.ar .sval{font-family:'Tajawal',sans-serif;font-weight:700;}
+.slbl{font-size:12px;color:var(--text2);margin-top:3px;}
+.card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:18px;}
+.ctitle{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-bottom:12px;}
+
+/* ── TABLE ── */
+.twrap{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;}
+.tbar{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.srch{flex:1;min-width:160px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:var(--bg);font-family:inherit;color:var(--text);outline:none;}
+.srch:focus{border-color:var(--accent);}
+.fsel{padding:7px 10px;border-radius:8px;border:1px solid var(--border);font-size:13px;background:var(--bg);font-family:inherit;color:var(--text);}
+table{width:100%;border-collapse:collapse;}
+th{padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);background:var(--surface2);text-align:left;border-bottom:1px solid var(--border);}
+body.ar th{text-align:right;}
+td{padding:12px 14px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.code{font-family:monospace;font-size:11px;background:var(--surface2);padding:2px 7px;border-radius:4px;color:var(--text2);}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.bg{background:var(--accent-light);color:var(--accent);}
+.bo{background:var(--warn-light);color:var(--warn);}
+.br{background:var(--danger-light);color:var(--danger);}
+.b-admin{background:#e8eaf6;color:#3949ab;}
+.b-doctor{background:#e0f2f1;color:#00796b;}
+.b-receptionist{background:#fff3e0;color:#e65100;}
+
+/* ── SCHEDULE ── */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;}
+.dcard{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;}
+.dhead{padding:12px 16px;background:var(--accent);color:#fff;display:flex;align-items:center;gap:10px;}
+.dav{width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+.dname-s{font-weight:600;font-size:14px;}
+.dcnt{font-size:11px;opacity:.8;}
+.dpts{padding:10px;display:flex;flex-direction:column;gap:7px;}
+.spt{padding:9px 11px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;}
+.spt:hover{border-color:var(--accent);}
+.spn{font-size:13px;font-weight:500;}
+.spd{font-size:11px;color:var(--text2);margin-top:2px;}
+
+/* ── MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.ov.on{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border-radius:16px;width:100%;max-width:680px;max-height:92vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.15);transform:translateY(16px);transition:transform .2s;}
+.ov.on .modal{transform:translateY(0);}
+.mhead{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1;}
+.mtitle{font-family:'DM Serif Display',serif;font-size:21px;}
+body.ar .mtitle{font-family:'Tajawal',sans-serif;font-weight:700;}
+.mclose{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);padding:3px 8px;border-radius:6px;font-family:inherit;}
+.mclose:hover{background:var(--surface2);}
+.mbody{padding:22px;}
+.mfoot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+body.ar .mfoot{justify-content:flex-start;}
+
+/* ── FORM ── */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg.full{grid-column:1/-1;}
+.fsec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--accent);border-bottom:1px solid var(--accent-light);padding-bottom:5px;margin:16px 0 10px;grid-column:1/-1;}
+label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+input,select,textarea{padding:8px 11px;border-radius:8px;border:1px solid var(--border);font-size:14px;font-family:inherit;color:var(--text);background:var(--bg);outline:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#fff;}
+textarea{resize:vertical;min-height:68px;}
+.sdrow{display:flex;gap:7px;align-items:center;background:var(--surface2);border-radius:8px;padding:7px 10px;border:1px solid var(--border);}
+.sdrow input{background:#fff;flex:1;}
+.rmsd{background:none;border:none;color:var(--danger);font-size:15px;cursor:pointer;padding:2px 6px;border-radius:4px;font-family:inherit;}
+.rmsd:hover{background:var(--danger-light);}
+
+/* ── DETAIL ── */
+.dsec{margin-bottom:20px;}
+.dsec h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--accent-light);}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
+.df{background:var(--surface2);border-radius:8px;padding:9px 13px;}
+.dfl{font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:3px;}
+.dfv{font-size:14px;font-weight:500;}
+.tags{display:flex;flex-wrap:wrap;gap:5px;}
+.tag{background:var(--accent-light);color:var(--accent);padding:3px 9px;border-radius:20px;font-size:12px;font-weight:500;}
+.empty{text-align:center;padding:44px 20px;color:var(--text2);}
+.empty-i{font-size:44px;margin-bottom:10px;}
+.datechip{font-size:13px;color:var(--text2);background:var(--surface2);padding:5px 12px;border-radius:8px;border:1px solid var(--border);}
+
+/* ── MY SCHEDULE (doctor view) ── */
+.my-sched-header{background:var(--accent);color:#fff;border-radius:var(--r);padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:14px;}
+.my-sched-avatar{width:48px;height:48px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;}
+.my-sched-info h2{font-size:20px;font-weight:600;}
+.my-sched-info p{font-size:13px;opacity:.85;margin-top:2px;}
+.sched-pt-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
+.sched-pt-card:hover{border-color:var(--accent);}
+.sched-pt-card .pt-info h3{font-size:15px;font-weight:600;}
+.sched-pt-card .pt-info p{font-size:12px;color:var(--text2);margin-top:2px;}
+.sched-pt-time{font-size:20px;font-weight:700;color:var(--accent);text-align:right;white-space:nowrap;}
+.sched-pt-time small{display:block;font-size:11px;color:var(--text2);font-weight:400;}
+
+/* ── USERS PAGE ── */
+.user-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;display:flex;align-items:center;gap:14px;margin-bottom:10px;}
+.user-card-av{width:40px;height:40px;background:var(--accent-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--accent);flex-shrink:0;}
+.user-card-info{flex:1;}
+.user-card-info h3{font-size:15px;font-weight:600;}
+.user-card-info p{font-size:12px;color:var(--text2);margin-top:2px;}
+.user-card-actions{display:flex;gap:6px;align-items:center;}
+
+@media(max-width:640px){#sidebar{display:none;}.fgrid{grid-template-columns:1fr;}#main{padding:14px;}}
+
+/* ── LOADING ── */
+#loadingScreen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+#loadingScreen.hidden{display:none;}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingScreen">
+  <div class="spinner"></div>
+  <div style="font-size:14px;color:var(--text2);">Loading Arena Clinic...</div>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="setupScreen" class="hidden">
+  <div class="setup-box">
+    <div class="setup-logo">
+      <div class="setup-logo-icon">🩺</div>
+      <span class="setup-logo-txt">Arena Clinic Workflow</span>
+    </div>
+    <div class="setup-title">One-time Setup</div>
+    <div class="setup-sub">To sync data across all devices, this app uses Firebase (free). Follow these steps once, then everyone can log in from any device.</div>
+
+    <div class="setup-step">
+      <div class="setup-step-num">Step 1 — Create a free Firebase project</div>
+      <p>Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → Click <strong>"Add project"</strong> → Name it <strong>"Arena Clinic"</strong> → Disable Google Analytics → Create project.</p>
+    </div>
+    <div class="setup-step">
+      <div class="setup-step-num">Step 2 — Enable Authentication</div>
+      <p>In your project → <strong>Build → Authentication → Get started</strong> → Enable <strong>Email/Password</strong> sign-in method.</p>
+    </div>
+    <div class="setup-step">
+      <div class="setup-step-num">Step 3 — Enable Firestore Database</div>
+      <p>In your project → <strong>Build → Firestore Database → Create database</strong> → Start in <strong>test mode</strong> → Choose any region → Done.</p>
+    </div>
+    <div class="setup-step">
+      <div class="setup-step-num">Step 4 — Get your app config</div>
+      <p>Go to <strong>Project Settings (⚙️)</strong> → <strong>"Your apps"</strong> → Click <strong>"Web" (&lt;/&gt;)</strong> → Register app → Copy the <code>firebaseConfig</code> values below.</p>
+    </div>
+
+    <div class="setup-inputs">
+      <input type="text" id="cfg-apiKey" placeholder="apiKey: e.g. AIzaSy..."/>
+      <input type="text" id="cfg-authDomain" placeholder="authDomain: e.g. arena-clinic.firebaseapp.com"/>
+      <input type="text" id="cfg-projectId" placeholder="projectId: e.g. arena-clinic-xxxxx"/>
+      <input type="text" id="cfg-storageBucket" placeholder="storageBucket (optional)"/>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;">After saving, you'll set up the first Admin account.</div>
+    <div class="setup-err" id="setupErr">Please fill in apiKey, authDomain, and projectId.</div>
+    <button class="btn btn-p" style="width:100%;justify-content:center;font-size:15px;" id="setupSaveBtn">Save & Connect →</button>
+  </div>
+</div>
+
+<!-- ADMIN FIRST-TIME SETUP -->
+<div id="firstAdminScreen" class="hidden" style="position:fixed;inset:0;background:var(--bg);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div class="login-box" style="max-width:420px;">
+    <div class="login-logo">
+      <div class="login-logo-icon">🩺</div>
+      <span class="login-logo-txt">Arena Clinic</span>
+    </div>
+    <div class="login-title" style="margin-bottom:6px;">Create Admin Account</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6;">Set up the first administrator. Enter your name, email and the password you already used.</div>
+    <div class="login-field"><label>Full Name</label><input type="text" id="fa-name" placeholder="e.g. Anas Tahhan"/></div>
+    <div class="login-field"><label>Email</label><input type="email" id="fa-email" placeholder="your@email.com"/></div>
+    <div class="login-field"><label>Password</label><input type="password" id="fa-pass" placeholder="Your password"/></div>
+    <div id="faErr" style="color:var(--danger);font-size:13px;margin-bottom:10px;display:none;padding:8px 12px;background:var(--danger-light);border-radius:8px;"></div>
+    <button class="login-btn" id="faCreateBtn">Create Admin Account →</button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="hidden">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">🩺</div>
+      <span class="login-logo-txt">Arena Clinic</span>
+    </div>
+    <div class="login-title" id="login-title">Welcome back</div>
+    <div class="login-sub" id="login-sub">Sign in to access your clinic dashboard</div>
+    <div class="login-field"><label id="ll-email">Email</label><input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email"/></div>
+    <div class="login-field"><label id="ll-pass">Password</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"/></div>
+    <div class="login-err" id="loginErr"></div>
+    <button class="login-btn" id="loginBtn">Sign In</button>
+    <div class="login-lang"><button id="loginLangBtn">عربي</button></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="topbar" style="display:none;">
+  <div id="topbar-left">
+    <span class="clinic-name" id="topClinicName">Arena Clinic Workflow</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="user-pill">
+      <span class="uname" id="topUserName"></span>
+      <span class="urole" id="topUserRole"></span>
+    </div>
+    <button id="logoutBtn">Sign Out</button>
+    <button id="langBtn">عربي</button>
+  </div>
+</div>
+
+<div id="wrap" style="display:none;">
+  <aside id="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🩺</div>
+      <span class="logo-txt">Arena Clinic</span>
+    </div>
+    <nav id="sideNav">
+      <div class="nlabel">MENU</div>
+      <button class="nitem on" id="nb-dash"><span>📊</span><span id="nl-dash">Dashboard</span></button>
+      <button class="nitem" id="nb-mysched" style="display:none;"><span>📅</span><span id="nl-mysched">My Schedule</span></button>
+      <button class="nitem" id="nb-pts" style="display:none;"><span>🧑‍⚕️</span><span id="nl-pts">Patients</span></button>
+      <button class="nitem" id="nb-sched" style="display:none;"><span>🗓️</span><span id="nl-sched">All Schedules</span></button>
+      <button class="nitem" id="nb-docs" style="display:none;"><span>👨‍⚕️</span><span id="nl-docs">Doctors</span></button>
+      <button class="nitem" id="nb-users" style="display:none;"><span>👥</span><span id="nl-users">User Accounts</span></button>
+    </nav>
+  </aside>
+
+  <main id="main">
+    <!-- DASHBOARD -->
+    <div id="pg-dash" class="pg on">
+      <div class="ph">
+        <div><div class="ptitle" id="dl-dash">Dashboard</div><div class="psub" id="dl-today">Today's Overview</div></div>
+        <div class="datechip" id="todayChip"></div>
+      </div>
+      <div class="stats" id="statsRow"></div>
+      <div class="card"><div class="ctitle" id="dl-recent">Recent Patients</div><div id="recentList"></div></div>
+    </div>
+
+    <!-- MY SCHEDULE (Doctor) -->
+    <div id="pg-mysched" class="pg">
+      <div id="mySchedContent"></div>
+    </div>
+
+    <!-- PATIENTS -->
+    <div id="pg-pts" class="pg">
+      <div class="ph">
+        <div><div class="ptitle" id="dl-pts">Patient Charts</div><div class="psub" id="dl-ptssub">Full chart review</div></div>
+        <button class="btn btn-p" id="addPtBtn" style="display:none;"><span>+</span><span id="bl-addpt">Add Patient</span></button>
+      </div>
+      <div class="twrap">
+        <div class="tbar">
+          <input class="srch" id="ptSearch" placeholder="Search..."/>
+          <select class="fsel" id="filterDoc"><option value="">All Doctors</option></select>
+          <select class="fsel" id="filterStatus">
+            <option value="">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Discharged">Discharged</option>
+            <option value="On Hold">On Hold</option>
+          </select>
+        </div>
+        <div id="ptsTable"></div>
+      </div>
+    </div>
+
+    <!-- ALL SCHEDULES -->
+    <div id="pg-sched" class="pg">
+      <div class="ph">
+        <div><div class="ptitle" id="dl-sched">Daily Schedule</div><div class="psub" id="dl-schedsub">Today's appointments</div></div>
+      </div>
+      <div class="sgrid" id="schedGrid"></div>
+    </div>
+
+    <!-- DOCTORS -->
+    <div id="pg-docs" class="pg">
+      <div class="ph">
+        <div><div class="ptitle" id="dl-docs">Doctors</div><div class="psub" id="dl-docssub">Manage staff</div></div>
+        <button class="btn btn-p" id="addDocBtn"><span>+</span><span id="bl-adddoc">Add Doctor</span></button>
+      </div>
+      <div class="sgrid" id="docsList"></div>
+    </div>
+
+    <!-- USERS -->
+    <div id="pg-users" class="pg">
+      <div class="ph">
+        <div><div class="ptitle" id="dl-users">User Accounts</div><div class="psub" id="dl-userssub">Manage clinic staff accounts</div></div>
+        <button class="btn btn-p" id="addUserBtn"><span>+</span><span id="bl-adduser">Add User</span></button>
+      </div>
+      <div id="usersList"></div>
+    </div>
+  </main>
+</div>
+
+<!-- PATIENT MODAL -->
+<div class="ov" id="ptModal">
+  <div class="modal">
+    <div class="mhead"><div class="mtitle" id="ptModalTitle">Add Patient</div><button class="mclose" id="closePtModal">✕</button></div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fsec">Basic Information</div>
+        <div class="fg"><label>Full Name (EN)</label><input type="text" id="f-nameEn" placeholder="e.g. Ahmed Hassan"/></div>
+        <div class="fg"><label>Full Name (AR)</label><input type="text" id="f-nameAr" placeholder="أحمد حسن" dir="rtl"/></div>
+        <div class="fg"><label>Age</label><input type="number" id="f-age" min="0" max="120" placeholder="35"/></div>
+        <div class="fg"><label>Gender</label><select id="f-gender"><option value="Male">Male</option><option value="Female">Female</option></select></div>
+        <div class="fg"><label>Phone</label><input type="text" id="f-phone" placeholder="+20 ..."/></div>
+        <div class="fg"><label>Referral Source</label><input type="text" id="f-ref" placeholder="Dr. Ahmed, Self"/></div>
+        <div class="fsec">Clinical Information</div>
+        <div class="fg"><label>Diagnosis</label><input type="text" id="f-diag" placeholder="e.g. LBP, Frozen Shoulder"/></div>
+        <div class="fg"><label>Assigned Doctor</label><select id="f-doc"></select></div>
+        <div class="fg"><label>Initial Session Date</label><input type="date" id="f-init"/></div>
+        <div class="fg"><label>Sessions Needed</label><input type="number" id="f-sessions" value="0" min="0" placeholder="e.g. 12"/></div>
+        <div class="fg full">
+          <label>Session Dates &amp; Times</label>
+          <div id="sdContainer" style="display:flex;flex-direction:column;gap:7px;margin-top:4px;"></div>
+          <button type="button" class="btn btn-s btn-sm" id="addSdBtn" style="margin-top:7px;align-self:flex-start;">+ Add Session Date</button>
+        </div>
+        <div class="fg"><label>Status</label><select id="f-status"><option value="Active">Active</option><option value="Discharged">Discharged</option><option value="On Hold">On Hold</option></select></div>
+        <div class="fg"><label>Payment / Insurance</label><select id="f-pay"><option value="Paid">Paid</option><option value="Insurance">Insurance</option><option value="Pending">Pending</option></select></div>
+        <div class="fg"><label>Discharge Date</label><input type="date" id="f-discharge"/></div>
+        <div class="fsec">Treatment Plan</div>
+        <div class="fg full"><label>Physical Agents</label><input type="text" id="f-phys" placeholder="e.g. TENS, Ultrasound, Hot Pack"/></div>
+        <div class="fg full"><label>Manual Therapy</label><input type="text" id="f-manual" placeholder="e.g. Maitland Grade III, STM"/></div>
+        <div class="fg full"><label>Therapeutic Exercises</label><textarea id="f-ex" placeholder="e.g. Core strengthening, McKenzie..."></textarea></div>
+        <div class="fg full"><label>Home Exercise Program (HEP)</label><textarea id="f-hep" placeholder="Exercises for home practice..."></textarea></div>
+        <div class="fg full"><label>Advice &amp; Recommendations</label><textarea id="f-advice" placeholder="e.g. Avoid heavy lifting, apply ice 3x/day..."></textarea></div>
+        <div class="fsec">Goals &amp; Notes</div>
+        <div class="fg full"><label>Short-Term Goals</label><input type="text" id="f-gs" placeholder="e.g. Reduce pain to 3/10 in 2 weeks"/></div>
+        <div class="fg full"><label>Long-Term Goals</label><input type="text" id="f-gl" placeholder="e.g. Full return to work in 6 weeks"/></div>
+        <div class="fg full"><label>Contraindications / Precautions</label><input type="text" id="f-contra" placeholder="e.g. Pacemaker, Osteoporosis"/></div>
+        <div class="fg full"><label>Session Notes (SOAP)</label><textarea id="f-notes" placeholder="S: ... O: ... A: ... P: ..."></textarea></div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-s" id="cancelPtBtn">Cancel</button>
+      <button class="btn btn-p" id="savePtBtn">Save Patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="ov" id="detModal">
+  <div class="modal">
+    <div class="mhead">
+      <div><div class="mtitle" id="detName"></div><div style="font-size:12px;color:var(--text2);margin-top:2px;" id="detCode"></div></div>
+      <button class="mclose" id="closeDetModal">✕</button>
+    </div>
+    <div class="mbody" id="detBody"></div>
+    <div class="mfoot">
+      <button class="btn btn-s" id="closeDetBtn">Close</button>
+      <button class="btn btn-p" id="detEditBtn" style="display:none;">Edit Chart</button>
+      <button class="btn btn-d btn-sm" id="detDelBtn" style="display:none;">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- DOCTOR MODAL -->
+<div class="ov" id="docModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="mhead"><div class="mtitle">Add Doctor</div><button class="mclose" id="closeDocModal">✕</button></div>
+    <div class="mbody">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="fg"><label>English Name</label><input type="text" id="d-nameEn" placeholder="Dr. Sara Ahmed"/></div>
+        <div class="fg"><label>Arabic Name</label><input type="text" id="d-nameAr" placeholder="د. سارة أحمد" dir="rtl"/></div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-s" id="cancelDocBtn">Cancel</button>
+      <button class="btn btn-p" id="saveDocBtn">Save Doctor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD USER MODAL -->
+<div class="ov" id="userModal">
+  <div class="modal" style="max-width:460px;">
+    <div class="mhead"><div class="mtitle" id="userModalTitle">Add User</div><button class="mclose" id="closeUserModal">✕</button></div>
+    <div class="mbody">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="fg"><label>Full Name</label><input type="text" id="u-name" placeholder="e.g. Dr. Sara Ahmed"/></div>
+        <div class="fg"><label>Email</label><input type="email" id="u-email" placeholder="sara@clinic.com"/></div>
+        <div class="fg"><label>Password</label><input type="password" id="u-pass" placeholder="Min 6 characters"/></div>
+        <div class="fg"><label>Role</label>
+          <select id="u-role">
+            <option value="doctor">Doctor</option>
+            <option value="receptionist">Receptionist</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="fg" id="u-doc-link-wrap" style="display:none;">
+          <label>Link to Doctor Profile (for schedule)</label>
+          <select id="u-doc-link"><option value="">-- None --</option></select>
+        </div>
+      </div>
+      <div style="color:var(--danger);font-size:13px;margin-top:10px;display:none;" id="userErr"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-s" id="cancelUserBtn">Cancel</button>
+      <button class="btn btn-p" id="saveUserBtn">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── CONFIG STORAGE ──────────────────────────────────────
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+
+var savedCfg = null;
+try { savedCfg = JSON.parse(lsGet('arena_firebase_cfg')); } catch(e){}
+
+var app, auth, db;
+var currentUser = null;   // Firebase auth user
+var currentProfile = null; // Firestore profile {name, role, doctorId}
+var lang = 'en';
+var patients = [];
+var doctors = [];
+var users = [];
+var editPtId = null;
+var viewPtId = null;
+var curPage = 'dash';
+
+// ── INIT ────────────────────────────────────────────────
+document.getElementById('loadingScreen').classList.remove('hidden');
+
+if (savedCfg && savedCfg.apiKey && savedCfg.authDomain && savedCfg.projectId) {
+  initFirebase(savedCfg);
+} else {
+  document.getElementById('loadingScreen').classList.add('hidden');
+  document.getElementById('setupScreen').classList.remove('hidden');
+}
+
+function initFirebase(cfg) {
+  try {
+    app = initializeApp(cfg);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    lsSet('arena_firebase_cfg', JSON.stringify(cfg));
+    startAuthListener();
+  } catch(e) {
+    document.getElementById('loadingScreen').classList.add('hidden');
+    document.getElementById('setupScreen').classList.remove('hidden');
+    document.getElementById('setupErr').style.display = 'block';
+    document.getElementById('setupErr').textContent = 'Firebase error: ' + e.message;
+  }
+}
+
+function startAuthListener() {
+  onAuthStateChanged(auth, async function(user) {
+    document.getElementById('loadingScreen').classList.add('hidden');
+    if (user) {
+      currentUser = user;
+      var profileDoc = await getDoc(doc(db, 'users', user.uid));
+      if (profileDoc.exists()) {
+        currentProfile = profileDoc.data();
+        showApp();
+      } else {
+        // User exists in Auth but not in Firestore yet
+        // Check if there are ANY users in Firestore already
+        var usersSnap = await getDocs(collection(db, 'users'));
+        if (usersSnap.empty) {
+          // No users at all - this is truly the first admin setup
+          document.getElementById('firstAdminScreen').classList.remove('hidden');
+        } else {
+          // Users exist but this one has no profile - sign them out and show login
+          await signOut(auth);
+          showLogin();
+        }
+      }
+    } else {
+      currentUser = null;
+      currentProfile = null;
+      // Check if any users exist to decide what screen to show
+      try {
+        var usersSnap2 = await getDocs(collection(db, 'users'));
+        if (usersSnap2.empty) {
+          // No users yet - need to create first admin via sign-in attempt
+          document.getElementById('firstAdminScreen').classList.remove('hidden');
+        } else {
+          showLogin();
+        }
+      } catch(e) {
+        showLogin();
+      }
+    }
+  });
+}
+
+// ── SETUP SCREEN ────────────────────────────────────────
+document.getElementById('setupSaveBtn').addEventListener('click', function() {
+  var cfg = {
+    apiKey: document.getElementById('cfg-apiKey').value.trim(),
+    authDomain: document.getElementById('cfg-authDomain').value.trim(),
+    projectId: document.getElementById('cfg-projectId').value.trim(),
+    storageBucket: document.getElementById('cfg-storageBucket').value.trim()
+  };
+  if (!cfg.apiKey || !cfg.authDomain || !cfg.projectId) {
+    document.getElementById('setupErr').style.display = 'block';
+    return;
+  }
+  document.getElementById('setupScreen').classList.add('hidden');
+  document.getElementById('loadingScreen').classList.remove('hidden');
+  initFirebase(cfg);
+});
+
+// ── FIRST ADMIN ──────────────────────────────────────────
+document.getElementById('faCreateBtn').addEventListener('click', async function() {
+  var btn = this;
+  var name = document.getElementById('fa-name').value.trim();
+  var email = document.getElementById('fa-email').value.trim();
+  var pass = document.getElementById('fa-pass').value;
+  var errEl = document.getElementById('faErr');
+  errEl.style.display = 'none';
+  if (!name) { errEl.textContent = 'Please enter your full name.'; errEl.style.display = 'block'; return; }
+  if (!email) { errEl.textContent = 'Please enter your email.'; errEl.style.display = 'block'; return; }
+  if (!pass) { errEl.textContent = 'Please enter your password.'; errEl.style.display = 'block'; return; }
+  btn.textContent = 'Setting up...';
+  btn.disabled = true;
+  try {
+    var uid;
+    try {
+      var cred = await createUserWithEmailAndPassword(auth, email, pass);
+      uid = cred.user.uid;
+    } catch(e) {
+      if (e.code === 'auth/email-already-in-use') {
+        var cred2 = await signInWithEmailAndPassword(auth, email, pass);
+        uid = cred2.user.uid;
+      } else { throw e; }
+    }
+    await setDoc(doc(db, 'users', uid), { name: name, email: email, role: 'admin', createdAt: serverTimestamp() });
+    currentProfile = { name: name, email: email, role: 'admin' };
+    document.getElementById('firstAdminScreen').classList.add('hidden');
+    showApp();
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Create Admin Account →';
+    btn.disabled = false;
+  }
+});
+
+// ── LOGIN ────────────────────────────────────────────────
+function showLogin() {
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('topbar').style.display = 'none';
+  document.getElementById('wrap').style.display = 'none';
+}
+
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('loginPass').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+
+async function doLogin() {
+  var email = document.getElementById('loginEmail').value.trim();
+  var pass = document.getElementById('loginPass').value;
+  var errEl = document.getElementById('loginErr');
+  errEl.style.display = 'none';
+  if (!email || !pass) { errEl.textContent = 'Please enter email and password.'; errEl.style.display = 'block'; return; }
+  try {
+    document.getElementById('loginBtn').textContent = 'Signing in...';
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e) {
+    errEl.textContent = 'Invalid email or password.'; errEl.style.display = 'block';
+    document.getElementById('loginBtn').textContent = 'Sign In';
+  }
+}
+
+document.getElementById('loginLangBtn').addEventListener('click', function() {
+  lang = lang === 'en' ? 'ar' : 'en';
+  this.textContent = lang === 'en' ? 'عربي' : 'English';
+  document.body.classList.toggle('ar', lang === 'ar');
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.getElementById('login-title').textContent = lang === 'ar' ? 'مرحباً بعودتك' : 'Welcome back';
+  document.getElementById('login-sub').textContent = lang === 'ar' ? 'سجّل دخولك للوصول إلى لوحة التحكم' : 'Sign in to access your clinic dashboard';
+  document.getElementById('ll-email').textContent = lang === 'ar' ? 'البريد الإلكتروني' : 'Email';
+  document.getElementById('ll-pass').textContent = lang === 'ar' ? 'كلمة المرور' : 'Password';
+  document.getElementById('loginBtn').textContent = lang === 'ar' ? 'تسجيل الدخول' : 'Sign In';
+});
+
+// ── SHOW APP ────────────────────────────────────────────
+function showApp() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('topbar').style.display = 'flex';
+  document.getElementById('wrap').style.display = 'flex';
+  document.getElementById('topUserName').textContent = currentProfile.name;
+  document.getElementById('topUserRole').textContent = currentProfile.role;
+  buildNav();
+  loadData();
+  goTo('dash');
+}
+
+// ── NAV based on role ───────────────────────────────────
+function buildNav() {
+  var role = currentProfile.role;
+  document.getElementById('nb-dash').style.display = 'flex';
+  if (role === 'doctor') {
+    document.getElementById('nb-mysched').style.display = 'flex';
+  }
+  if (role === 'admin' || role === 'receptionist') {
+    document.getElementById('nb-pts').style.display = 'flex';
+    document.getElementById('nb-sched').style.display = 'flex';
+    document.getElementById('nb-docs').style.display = 'flex';
+    document.getElementById('addPtBtn').style.display = 'inline-flex';
+  }
+  if (role === 'doctor') {
+    document.getElementById('nb-pts').style.display = 'flex';
+  }
+  if (role === 'admin') {
+    document.getElementById('nb-users').style.display = 'flex';
+  }
+  // Edit/delete patient buttons
+  if (role === 'admin' || role === 'receptionist') {
+    document.getElementById('detEditBtn').style.display = 'inline-flex';
+    document.getElementById('detDelBtn').style.display = 'inline-flex';
+  }
+}
+
+// ── LOGOUT ──────────────────────────────────────────────
+document.getElementById('logoutBtn').addEventListener('click', async function() {
+  await signOut(auth);
+});
+
+// ── LANG TOGGLE ─────────────────────────────────────────
+document.getElementById('langBtn').addEventListener('click', function() {
+  lang = lang === 'en' ? 'ar' : 'en';
+  this.textContent = lang === 'en' ? 'عربي' : 'English';
+  document.body.classList.toggle('ar', lang === 'ar');
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  render(curPage);
+});
+
+// ── LOAD DATA ────────────────────────────────────────────
+function loadData() {
+  // Real-time listeners
+  onSnapshot(collection(db, 'patients'), function(snap) {
+    patients = snap.docs.map(function(d){ return Object.assign({id: d.id}, d.data()); });
+    render(curPage);
+  });
+  onSnapshot(collection(db, 'doctors'), function(snap) {
+    doctors = snap.docs.map(function(d){ return Object.assign({id: d.id}, d.data()); });
+    render(curPage);
+  });
+  if (currentProfile.role === 'admin') {
+    onSnapshot(collection(db, 'users'), function(snap) {
+      users = snap.docs.map(function(d){ return Object.assign({id: d.id}, d.data()); });
+      renderUsers();
+    });
+  }
+}
+
+// ── NAVIGATION ───────────────────────────────────────────
+function goTo(pg) {
+  document.querySelectorAll('.pg').forEach(function(el){ el.classList.remove('on'); });
+  document.querySelectorAll('.nitem').forEach(function(el){ el.classList.remove('on'); });
+  var pgEl = document.getElementById('pg-' + pg);
+  var nbEl = document.getElementById('nb-' + pg);
+  if (pgEl) pgEl.classList.add('on');
+  if (nbEl) nbEl.classList.add('on');
+  curPage = pg;
+  render(pg);
+}
+function render(pg) {
+  if (pg === 'dash') renderDash();
+  if (pg === 'mysched') renderMySched();
+  if (pg === 'pts') renderPts();
+  if (pg === 'sched') renderSched();
+  if (pg === 'docs') renderDocs();
+  if (pg === 'users') renderUsers();
+}
+
+// ── UTILS ────────────────────────────────────────────────
+function todayStr(){ return new Date().toISOString().split('T')[0]; }
+function fmtDate(d){
+  if(!d) return '—';
+  var dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString(lang==='ar'?'ar-EG':'en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+function genCode(){ return 'PT-' + new Date().getFullYear() + '-' + String(patients.length + 1).padStart(3,'0'); }
+function pName(p){ return (lang==='ar' && p.nameAr) ? p.nameAr : p.nameEn; }
+function dName(d){ return (lang==='ar' && d.nameAr) ? d.nameAr : d.nameEn; }
+function badge(s){
+  if(s==='Active') return '<span class="badge bg">' + (lang==='ar'?'نشط':'Active') + '</span>';
+  if(s==='Discharged') return '<span class="badge br">' + (lang==='ar'?'مخرج':'Discharged') + '</span>';
+  return '<span class="badge bo">' + (lang==='ar'?'معلق':'On Hold') + '</span>';
+}
+function roleBadge(r){
+  if(r==='admin') return '<span class="badge b-admin">Admin</span>';
+  if(r==='doctor') return '<span class="badge b-doctor">Doctor</span>';
+  return '<span class="badge b-receptionist">Receptionist</span>';
+}
+function getSd(p){
+  if(p.sessionDates && p.sessionDates.length) return p.sessionDates;
+  if(p.sessionDate) return [{date:p.sessionDate,time:p.sessionTime||''}];
+  return [];
+}
+function sc(v,l){ return '<div class="scard"><div class="sval">'+v+'</div><div class="slbl">'+l+'</div></div>'; }
+
+// ── DASHBOARD ────────────────────────────────────────────
+function renderDash() {
+  var now = new Date();
+  document.getElementById('todayChip').textContent = now.toLocaleDateString(lang==='ar'?'ar-EG':'en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('dl-today').textContent = lang==='ar'?'نظرة عامة على اليوم':"Today's Overview";
+  var today = todayStr();
+  var act = patients.filter(function(p){return p.status==='Active';}).length;
+  var todayPts = patients.filter(function(p){return getSd(p).some(function(s){return s.date===today;});}).length;
+  var totS = patients.reduce(function(a,p){return a+getSd(p).length;},0);
+  document.getElementById('statsRow').innerHTML =
+    sc(patients.length, lang==='ar'?'إجمالي المرضى':'Total Patients') +
+    sc(act, lang==='ar'?'المرضى النشطون':'Active Patients') +
+    sc(todayPts, lang==='ar'?'جلسات اليوم':"Today's Sessions") +
+    sc(doctors.length, lang==='ar'?'الأطباء':'Doctors') +
+    sc(totS, lang==='ar'?'إجمالي الجلسات':'Total Sessions');
+  var recent = patients.slice().reverse().slice(0,5);
+  if(!recent.length){
+    document.getElementById('recentList').innerHTML='<div class="empty"><div class="empty-i">📋</div>'+(lang==='ar'?'لا يوجد مرضى بعد.':'No patients yet.')+'</div>';
+    return;
+  }
+  var h='<table><thead><tr><th>Code</th><th>Name</th><th>Diagnosis</th><th>Status</th></tr></thead><tbody>';
+  recent.forEach(function(p){
+    h+='<tr style="cursor:pointer" data-pid="'+p.id+'"><td><span class="code">'+p.code+'</span></td><td><strong>'+pName(p)+'</strong></td><td style="color:var(--text2)">'+(p.diagnosis||'—')+'</td><td>'+badge(p.status)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('recentList').innerHTML=h;
+  document.querySelectorAll('#recentList tr[data-pid]').forEach(function(row){
+    row.addEventListener('click',function(){viewPt(this.getAttribute('data-pid'));});
+  });
+}
+
+// ── MY SCHEDULE (Doctor view) ────────────────────────────
+function renderMySched() {
+  var today = todayStr();
+  var myDoctorId = currentProfile.doctorId || null;
+  var container = document.getElementById('mySchedContent');
+
+  var myPts = patients.filter(function(p){
+    return p.doctorId === myDoctorId && getSd(p).some(function(s){return s.date===today;});
+  }).sort(function(a,b){
+    var at=(getSd(a).find(function(s){return s.date===today;})||{}).time||'';
+    var bt=(getSd(b).find(function(s){return s.date===today;})||{}).time||'';
+    return at<bt?-1:1;
+  });
+
+  var h='<div class="my-sched-header">'+
+    '<div class="my-sched-avatar">'+((currentProfile.name||'?')[0].toUpperCase())+'</div>'+
+    '<div class="my-sched-info">'+
+      '<h2>'+(lang==='ar'?'جدولي اليوم':'My Schedule Today')+'</h2>'+
+      '<p>'+fmtDate(today)+' · '+myPts.length+' '+(lang==='ar'?'مريض':'patient(s)')+'</p>'+
+    '</div></div>';
+
+  if(!myDoctorId){
+    h+='<div class="empty"><div class="empty-i">⚠️</div><p style="font-size:14px;">'+(lang==='ar'?'لم يتم ربط حسابك بملف طبيب بعد. تواصل مع الأدمن.':'Your account is not linked to a doctor profile yet. Contact the admin.')+'</p></div>';
+  } else if(!myPts.length){
+    h+='<div class="empty"><div class="empty-i">🎉</div><p style="font-size:14px;">'+(lang==='ar'?'لا يوجد مرضى مجدولون اليوم.':'No patients scheduled for today.')+'</p></div>';
+  } else {
+    myPts.forEach(function(p){
+      var ts=getSd(p).find(function(s){return s.date===today;})||{};
+      h+='<div class="sched-pt-card" data-pid="'+p.id+'">'+
+        '<div class="pt-info"><h3>'+pName(p)+' <span class="code" style="font-size:11px;">'+p.code+'</span></h3>'+
+        '<p>'+(p.diagnosis||'—')+' · '+(lang==='ar'?'الجلسات':'Sessions')+': '+(p.sessions||getSd(p).length)+'</p></div>'+
+        '<div class="sched-pt-time">'+(ts.time||'—')+'<small>'+(lang==='ar'?'الوقت':'time')+'</small></div>'+
+      '</div>';
+    });
+  }
+  container.innerHTML=h;
+  container.querySelectorAll('.sched-pt-card[data-pid]').forEach(function(el){
+    el.addEventListener('click',function(){viewPt(this.getAttribute('data-pid'));});
+  });
+}
+
+// ── PATIENTS TABLE ───────────────────────────────────────
+function renderPts() {
+  updateDocFilter();
+  var search = (document.getElementById('ptSearch').value||'').toLowerCase();
+  var df = document.getElementById('filterDoc').value;
+  var sf = document.getElementById('filterStatus').value;
+
+  var myDoctorId = currentProfile.role==='doctor' ? (currentProfile.doctorId||null) : null;
+
+  var list = patients.filter(function(p){
+    var nm=(p.nameEn+' '+(p.nameAr||'')).toLowerCase();
+    var ms=!search||nm.includes(search)||p.code.toLowerCase().includes(search)||(p.diagnosis||'').toLowerCase().includes(search);
+    var md=!df||p.doctorId===df;
+    var mst=!sf||p.status===sf;
+    var myPt = myDoctorId ? p.doctorId===myDoctorId : true;
+    return ms&&md&&mst&&myPt;
+  });
+
+  if(!list.length){
+    document.getElementById('ptsTable').innerHTML='<div class="empty"><div class="empty-i">🔍</div>'+(lang==='ar'?'لم يتم العثور على مرضى.':'No patients found.')+'</div>';
+    return;
+  }
+  var canEdit = currentProfile.role==='admin'||currentProfile.role==='receptionist';
+  var h='<table><thead><tr><th>Code</th><th>Name</th><th>Diagnosis</th><th>Doctor</th><th>Sessions</th><th>Last Session</th><th>Status</th>'+(canEdit?'<th>Actions</th>':'')+'</tr></thead><tbody>';
+  list.forEach(function(p){
+    var doc=doctors.find(function(d){return d.id===p.doctorId;});
+    var sd=getSd(p);
+    var last=sd.length?fmtDate(sd[sd.length-1].date):'—';
+    h+='<tr><td><span class="code">'+p.code+'</span></td>'+
+      '<td><strong class="pt-link" data-pid="'+p.id+'" style="cursor:pointer;color:var(--accent);">'+pName(p)+'</strong></td>'+
+      '<td style="color:var(--text2);font-size:12px;">'+(p.diagnosis||'—')+'</td>'+
+      '<td style="font-size:12px;">'+(doc?dName(doc):'—')+'</td>'+
+      '<td style="text-align:center;"><strong>'+(p.sessions||sd.length)+'</strong></td>'+
+      '<td style="font-size:12px;color:var(--text2);">'+last+'</td>'+
+      '<td>'+badge(p.status)+'</td>'+
+      (canEdit?'<td><button class="btn btn-s btn-sm edit-btn" data-pid="'+p.id+'" style="margin-right:4px;">✏️</button><button class="btn btn-d btn-sm del-btn" data-pid="'+p.id+'">🗑️</button></td>':'')+
+      '</tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('ptsTable').innerHTML=h;
+  document.querySelectorAll('.pt-link').forEach(function(el){el.addEventListener('click',function(){viewPt(this.getAttribute('data-pid'));});});
+  document.querySelectorAll('.edit-btn').forEach(function(el){el.addEventListener('click',function(){editPt(this.getAttribute('data-pid'));});});
+  document.querySelectorAll('.del-btn').forEach(function(el){el.addEventListener('click',function(){delPt(this.getAttribute('data-pid'));});});
+}
+
+function updateDocFilter(){
+  var sel=document.getElementById('filterDoc');
+  var curr=sel.value;
+  sel.innerHTML='<option value="">'+(lang==='ar'?'جميع الأطباء':'All Doctors')+'</option>';
+  doctors.forEach(function(d){
+    var o=document.createElement('option');
+    o.value=d.id; o.textContent=dName(d);
+    if(d.id===curr) o.selected=true;
+    sel.appendChild(o);
+  });
+}
+
+// ── ALL SCHEDULES ────────────────────────────────────────
+function renderSched(){
+  var today=todayStr();
+  document.getElementById('dl-schedsub').textContent=(lang==='ar'?'مواعيد اليوم حسب الطبيب':"Today's appointments by doctor")+' — '+fmtDate(today);
+  var grid=document.getElementById('schedGrid');
+  if(!doctors.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-i">👨‍⚕️</div>'+(lang==='ar'?'لا يوجد أطباء.':'No doctors yet.')+'</div>';return;}
+  var h='';
+  doctors.forEach(function(doc){
+    var dp=patients.filter(function(p){return p.doctorId===doc.id&&getSd(p).some(function(s){return s.date===today;});})
+      .sort(function(a,b){
+        var at=(getSd(a).find(function(s){return s.date===today;})||{}).time||'';
+        var bt=(getSd(b).find(function(s){return s.date===today;})||{}).time||'';
+        return at<bt?-1:1;
+      });
+    h+='<div class="dcard"><div class="dhead"><div class="dav">'+(doc.nameEn[0]||'?').toUpperCase()+'</div>'+
+      '<div><div class="dname-s">'+dName(doc)+'</div><div class="dcnt">'+dp.length+' '+(lang==='ar'?'مريض اليوم':'patient(s) today')+'</div></div></div><div class="dpts">';
+    if(!dp.length){h+='<div style="text-align:center;padding:14px;color:var(--text2);font-size:13px;">'+(lang==='ar'?'لا يوجد مرضى اليوم':'No patients today')+'</div>';}
+    else{dp.forEach(function(p){
+      var ts=getSd(p).find(function(s){return s.date===today;})||{};
+      h+='<div class="spt" data-pid="'+p.id+'"><div><div class="spn">'+pName(p)+' <span class="code">'+p.code+'</span></div><div class="spd">'+(p.diagnosis||'—')+'</div></div><div style="text-align:right"><div style="font-size:12px;color:var(--text2);">'+(ts.time||'—')+'</div><div style="margin-top:4px;">'+badge(p.status)+'</div></div></div>';
+    });}
+    h+='</div></div>';
+  });
+  grid.innerHTML=h;
+  document.querySelectorAll('.spt[data-pid]').forEach(function(el){el.addEventListener('click',function(){viewPt(this.getAttribute('data-pid'));});});
+}
+
+// ── DOCTORS ──────────────────────────────────────────────
+function renderDocs(){
+  var list=document.getElementById('docsList');
+  if(!doctors.length){list.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-i">👨‍⚕️</div>'+(lang==='ar'?'لا يوجد أطباء.':'No doctors yet.')+'</div>';return;}
+  var h='';
+  doctors.forEach(function(doc){
+    var cnt=patients.filter(function(p){return p.doctorId===doc.id;}).length;
+    var act=patients.filter(function(p){return p.doctorId===doc.id&&p.status==='Active';}).length;
+    var canDel = currentProfile.role==='admin';
+    h+='<div class="dcard"><div class="dhead"><div class="dav">'+(doc.nameEn[0]||'?').toUpperCase()+'</div>'+
+      '<div style="flex:1"><div class="dname-s">'+dName(doc)+'</div></div>'+
+      (canDel?'<button class="btn btn-sm del-doc-btn" data-did="'+doc.id+'" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);">🗑️</button>':'')+
+      '</div><div style="padding:12px 14px;display:flex;gap:16px;">'+
+      '<div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--accent);">'+cnt+'</div><div style="font-size:11px;color:var(--text2);">Total</div></div>'+
+      '<div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--accent);">'+act+'</div><div style="font-size:11px;color:var(--text2);">'+(lang==='ar'?'نشط':'Active')+'</div></div>'+
+      '</div></div>';
+  });
+  list.innerHTML=h;
+  document.querySelectorAll('.del-doc-btn').forEach(function(el){el.addEventListener('click',function(){delDoc(this.getAttribute('data-did'));});});
+}
+
+// ── USERS ─────────────────────────────────────────────────
+function renderUsers(){
+  var list=document.getElementById('usersList');
+  if(!list) return;
+  if(!users.length){list.innerHTML='<div class="empty"><div class="empty-i">👥</div>No users yet.</div>';return;}
+  var h='';
+  users.forEach(function(u){
+    h+='<div class="user-card">'+
+      '<div class="user-card-av">'+(u.name||'?')[0].toUpperCase()+'</div>'+
+      '<div class="user-card-info"><h3>'+u.name+'</h3><p>'+u.email+'</p></div>'+
+      '<div class="user-card-actions">'+roleBadge(u.role)+
+      (u.id!==currentUser.uid?'<button class="btn btn-d btn-sm del-user-btn" data-uid="'+u.id+'">🗑️</button>':'<span style="font-size:11px;color:var(--text2);margin-left:6px;">(you)</span>')+
+      '</div></div>';
+  });
+  list.innerHTML=h;
+  document.querySelectorAll('.del-user-btn').forEach(function(el){
+    el.addEventListener('click',function(){delUser(this.getAttribute('data-uid'));});
+  });
+}
+
+// ── PATIENT FORM ─────────────────────────────────────────
+function openAddPt(){
+  editPtId=null;
+  document.getElementById('ptModalTitle').textContent='Add Patient';
+  document.getElementById('savePtBtn').textContent='Save Patient';
+  ['f-nameEn','f-nameAr','f-phone','f-ref','f-diag','f-phys','f-manual','f-ex','f-hep','f-advice','f-gs','f-gl','f-contra','f-notes','f-init','f-discharge'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('f-age').value='';
+  document.getElementById('f-sessions').value=0;
+  document.getElementById('f-status').value='Active';
+  document.getElementById('f-pay').value='Paid';
+  document.getElementById('f-gender').value='Male';
+  fillDocSel(null);
+  renderSdRows([{date:todayStr(),time:''}]);
+  openOv('ptModal');
+}
+
+function editPt(id){
+  var p=patients.find(function(x){return x.id===id;});
+  if(!p) return;
+  editPtId=id;
+  document.getElementById('ptModalTitle').textContent='Edit Patient';
+  document.getElementById('savePtBtn').textContent='Save Changes';
+  document.getElementById('f-nameEn').value=p.nameEn||'';
+  document.getElementById('f-nameAr').value=p.nameAr||'';
+  document.getElementById('f-age').value=p.age||'';
+  document.getElementById('f-gender').value=p.gender||'Male';
+  document.getElementById('f-phone').value=p.phone||'';
+  document.getElementById('f-ref').value=p.ref||'';
+  document.getElementById('f-diag').value=p.diagnosis||'';
+  document.getElementById('f-init').value=p.initialDate||'';
+  document.getElementById('f-sessions').value=p.sessions||0;
+  document.getElementById('f-status').value=p.status||'Active';
+  document.getElementById('f-phys').value=p.physical||'';
+  document.getElementById('f-manual').value=p.manual||'';
+  document.getElementById('f-ex').value=p.exercises||'';
+  document.getElementById('f-hep').value=p.hep||'';
+  document.getElementById('f-advice').value=p.advice||'';
+  document.getElementById('f-gs').value=p.goalShort||'';
+  document.getElementById('f-gl').value=p.goalLong||'';
+  document.getElementById('f-contra').value=p.contra||'';
+  document.getElementById('f-notes').value=p.notes||'';
+  document.getElementById('f-pay').value=p.payment||'Paid';
+  document.getElementById('f-discharge').value=p.dischargeDate||'';
+  fillDocSel(p.doctorId);
+  var sd=getSd(p);
+  renderSdRows(sd.length?sd:[{date:todayStr(),time:''}]);
+  closeOv('detModal');
+  openOv('ptModal');
+}
+
+async function savePt(){
+  var nameEn=document.getElementById('f-nameEn').value.trim();
+  if(!nameEn){alert('Please enter patient name (EN).');return;}
+  var sd=collectSd();
+  var today=todayStr();
+  var todaySd=sd.find(function(s){return s.date===today;})||sd[sd.length-1]||{};
+  var data={
+    nameEn,nameAr:document.getElementById('f-nameAr').value.trim(),
+    age:document.getElementById('f-age').value.trim(),
+    gender:document.getElementById('f-gender').value,
+    phone:document.getElementById('f-phone').value.trim(),
+    ref:document.getElementById('f-ref').value.trim(),
+    diagnosis:document.getElementById('f-diag').value.trim(),
+    doctorId:document.getElementById('f-doc').value,
+    initialDate:document.getElementById('f-init').value,
+    sessionDates:sd,sessionDate:todaySd.date||'',sessionTime:todaySd.time||'',
+    sessions:parseInt(document.getElementById('f-sessions').value)||sd.length,
+    status:document.getElementById('f-status').value,
+    physical:document.getElementById('f-phys').value.trim(),
+    manual:document.getElementById('f-manual').value.trim(),
+    exercises:document.getElementById('f-ex').value.trim(),
+    hep:document.getElementById('f-hep').value.trim(),
+    advice:document.getElementById('f-advice').value.trim(),
+    goalShort:document.getElementById('f-gs').value.trim(),
+    goalLong:document.getElementById('f-gl').value.trim(),
+    contra:document.getElementById('f-contra').value.trim(),
+    notes:document.getElementById('f-notes').value.trim(),
+    payment:document.getElementById('f-pay').value,
+    dischargeDate:document.getElementById('f-discharge').value,
+    updatedAt:serverTimestamp()
+  };
+  document.getElementById('savePtBtn').textContent='Saving...';
+  try{
+    if(editPtId){
+      await updateDoc(doc(db,'patients',editPtId),data);
+    }else{
+      data.code=genCode(); data.createdAt=serverTimestamp();
+      await addDoc(collection(db,'patients'),data);
+    }
+    closeOv('ptModal');
+  }catch(e){alert('Error saving: '+e.message);}
+  document.getElementById('savePtBtn').textContent='Save Patient';
+}
+
+async function delPt(id){
+  if(!confirm('Delete this patient? This cannot be undone.')) return;
+  await deleteDoc(doc(db,'patients',id));
+  closeOv('detModal');
+}
+
+function fillDocSel(selId){
+  var sel=document.getElementById('f-doc');
+  sel.innerHTML='<option value="">-- Select Doctor --</option>';
+  doctors.forEach(function(d){
+    var o=document.createElement('option');
+    o.value=d.id; o.textContent=dName(d);
+    if(d.id===selId) o.selected=true;
+    sel.appendChild(o);
+  });
+}
+
+// ── SESSION DATE ROWS ────────────────────────────────────
+function renderSdRows(arr){
+  var c=document.getElementById('sdContainer');
+  c.innerHTML='';
+  arr.forEach(function(s,i){appendSdRow(s.date,s.time,i+1);});
+  updateSessCount();
+}
+function appendSdRow(date,time,num){
+  var c=document.getElementById('sdContainer');
+  var div=document.createElement('div');
+  div.className='sdrow';
+  div.innerHTML='<span style="font-size:11px;font-weight:700;color:var(--text2);min-width:20px;text-align:center;">'+(num||(c.children.length+1))+'</span>'+
+    '<input type="date" class="sd-d" value="'+(date||'')+'" style="flex:1.5;"/>'+
+    '<input type="time" class="sd-t" value="'+(time||'')+'" style="flex:1;"/>'+
+    '<button class="rmsd">✕</button>';
+  c.appendChild(div);
+  div.querySelector('.sd-d').addEventListener('input',updateSessCount);
+  div.querySelector('.rmsd').addEventListener('click',function(){div.remove();renumberSd();updateSessCount();});
+}
+function renumberSd(){document.querySelectorAll('#sdContainer .sdrow').forEach(function(r,i){r.querySelector('span').textContent=i+1;});}
+function collectSd(){
+  var out=[];
+  document.querySelectorAll('#sdContainer .sdrow').forEach(function(r){
+    var d=r.querySelector('.sd-d').value;
+    if(d) out.push({date:d,time:r.querySelector('.sd-t').value});
+  });
+  return out;
+}
+function updateSessCount(){
+  var sdCount=collectSd().length;
+  var cur=parseInt(document.getElementById('f-sessions').value)||0;
+  if(sdCount>cur) document.getElementById('f-sessions').value=sdCount;
+}
+
+// ── VIEW PATIENT ─────────────────────────────────────────
+function viewPt(id){
+  var p=patients.find(function(x){return x.id===id;});
+  if(!p) return;
+  viewPtId=id;
+  var docObj=doctors.find(function(d){return d.id===p.doctorId;});
+  document.getElementById('detName').textContent=pName(p);
+  document.getElementById('detCode').textContent=p.code;
+  function f(lbl,val){return '<div class="df"><div class="dfl">'+lbl+'</div><div class="dfv">'+(val||'—')+'</div></div>';}
+  function tags(v){if(!v)return '<span style="color:var(--text2)">—</span>';return v.split(',').map(function(x){x=x.trim();return x?'<span class="tag">'+x+'</span>':'';}).join('');}
+  var sd=getSd(p);
+  var sessH=sd.length?sd.map(function(s,i){return '<div style="display:flex;align-items:center;gap:9px;padding:5px 9px;background:#fff;border-radius:6px;border:1px solid var(--border);"><span style="font-size:11px;font-weight:700;color:var(--text2);min-width:20px;">#'+(i+1)+'</span><span style="font-size:13px;font-weight:500;">'+fmtDate(s.date)+'</span>'+(s.time?'<span style="font-size:12px;color:var(--text2);">🕐 '+s.time+'</span>':'')+'</div>';}).join(''):'<span style="color:var(--text2)">—</span>';
+  document.getElementById('detBody').innerHTML=
+    '<div class="dsec"><h3>Basic Info</h3><div class="dgrid">'+
+    f('Code','<span class="code">'+p.code+'</span>')+f('Name (EN)',p.nameEn)+f('Name (AR)',p.nameAr||'—')+
+    f('Age',p.age?p.age+' yrs':'—')+f('Gender',p.gender)+f('Phone',p.phone)+f('Referral',p.ref)+f('Status',badge(p.status))+f('Payment',p.payment)+
+    '</div></div>'+
+    '<div class="dsec"><h3>Clinical Info</h3><div class="dgrid">'+
+    f('Diagnosis',p.diagnosis)+f('Doctor',docObj?dName(docObj):'—')+f('Initial Session',fmtDate(p.initialDate))+f('Sessions Needed',p.sessions||sd.length)+f('Discharge',p.dischargeDate?fmtDate(p.dischargeDate):'—')+
+    '</div><div class="df" style="margin-top:10px;"><div class="dfl">Session History</div><div style="margin-top:7px;display:flex;flex-direction:column;gap:5px;">'+sessH+'</div></div></div>'+
+    '<div class="dsec"><h3>Treatment Plan</h3><div style="display:flex;flex-direction:column;gap:10px;">'+
+    '<div class="df"><div class="dfl">Physical Agents</div><div class="tags">'+tags(p.physical)+'</div></div>'+
+    '<div class="df"><div class="dfl">Manual Therapy</div><div class="tags">'+tags(p.manual)+'</div></div>'+
+    '<div class="df"><div class="dfl">Therapeutic Exercises</div><div class="dfv" style="white-space:pre-line;">'+(p.exercises||'—')+'</div></div>'+
+    '<div class="df"><div class="dfl">HEP</div><div class="dfv" style="white-space:pre-line;">'+(p.hep||'—')+'</div></div>'+
+    '<div class="df" style="border:1px solid var(--accent-light)"><div class="dfl" style="color:var(--accent)">💡 Advice</div><div class="dfv" style="white-space:pre-line;">'+(p.advice||'—')+'</div></div>'+
+    '</div></div>'+
+    '<div class="dsec"><h3>Goals & Notes</h3><div style="display:flex;flex-direction:column;gap:10px;">'+
+    '<div class="df"><div class="dfl">Short-Term Goals</div><div class="dfv">'+(p.goalShort||'—')+'</div></div>'+
+    '<div class="df"><div class="dfl">Long-Term Goals</div><div class="dfv">'+(p.goalLong||'—')+'</div></div>'+
+    '<div class="df"><div class="dfl">Contraindications</div><div class="dfv" style="color:var(--danger)">'+(p.contra||'—')+'</div></div>'+
+    '<div class="df"><div class="dfl">Session Notes</div><div class="dfv" style="white-space:pre-line;">'+(p.notes||'—')+'</div></div>'+
+    '</div></div>';
+  openOv('detModal');
+}
+
+// ── DOCTORS CRUD ─────────────────────────────────────────
+function openAddDoc(){
+  document.getElementById('d-nameEn').value='';
+  document.getElementById('d-nameAr').value='';
+  openOv('docModal');
+}
+async function saveDoc(){
+  var n=document.getElementById('d-nameEn').value.trim();
+  if(!n){alert('Please enter doctor name.');return;}
+  document.getElementById('saveDocBtn').textContent='Saving...';
+  await addDoc(collection(db,'doctors'),{nameEn:n,nameAr:document.getElementById('d-nameAr').value.trim(),createdAt:serverTimestamp()});
+  closeOv('docModal');
+  document.getElementById('saveDocBtn').textContent='Save Doctor';
+}
+async function delDoc(id){
+  if(!confirm('Delete this doctor?')) return;
+  await deleteDoc(doc(db,'doctors',id));
+}
+
+// ── USERS CRUD ───────────────────────────────────────────
+function openAddUser(){
+  document.getElementById('u-name').value='';
+  document.getElementById('u-email').value='';
+  document.getElementById('u-pass').value='';
+  document.getElementById('u-role').value='doctor';
+  document.getElementById('u-doc-link-wrap').style.display='flex';
+  document.getElementById('userErr').style.display='none';
+  // Fill doctor link select
+  var sel=document.getElementById('u-doc-link');
+  sel.innerHTML='<option value="">-- None --</option>';
+  doctors.forEach(function(d){
+    var o=document.createElement('option');
+    o.value=d.id; o.textContent=dName(d);
+    sel.appendChild(o);
+  });
+  openOv('userModal');
+}
+
+async function saveUser(){
+  var name=document.getElementById('u-name').value.trim();
+  var email=document.getElementById('u-email').value.trim();
+  var pass=document.getElementById('u-pass').value;
+  var role=document.getElementById('u-role').value;
+  var doctorId=document.getElementById('u-doc-link').value||null;
+  var errEl=document.getElementById('userErr');
+  errEl.style.display='none';
+  if(!name||!email||!pass){errEl.textContent='Please fill all fields.';errEl.style.display='block';return;}
+  document.getElementById('saveUserBtn').textContent='Creating...';
+  try{
+    // Create auth user using a secondary app instance
+    var secondaryApp = initializeApp(savedCfg, 'secondary_'+Date.now());
+    var secondaryAuth = getAuth(secondaryApp);
+    var cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+    await setDoc(doc(db,'users',cred.user.uid),{name,email,role,doctorId:doctorId||null,createdAt:serverTimestamp()});
+    await signOut(secondaryAuth);
+    closeOv('userModal');
+  }catch(e){
+    errEl.textContent=e.message; errEl.style.display='block';
+  }
+  document.getElementById('saveUserBtn').textContent='Create Account';
+}
+
+async function delUser(uid){
+  if(!confirm('Remove this user account from the system?')) return;
+  await deleteDoc(doc(db,'users',uid));
+}
+
+// ── MODALS ───────────────────────────────────────────────
+function openOv(id){document.getElementById(id).classList.add('on');}
+function closeOv(id){document.getElementById(id).classList.remove('on');}
+
+// ── WIRE BUTTONS ─────────────────────────────────────────
+window.addEventListener('load', function(){
+  // Nav
+  document.getElementById('nb-dash').addEventListener('click',function(){goTo('dash');});
+  document.getElementById('nb-mysched').addEventListener('click',function(){goTo('mysched');});
+  document.getElementById('nb-pts').addEventListener('click',function(){goTo('pts');});
+  document.getElementById('nb-sched').addEventListener('click',function(){goTo('sched');});
+  document.getElementById('nb-docs').addEventListener('click',function(){goTo('docs');});
+  document.getElementById('nb-users').addEventListener('click',function(){goTo('users');});
+  // Patient
+  document.getElementById('addPtBtn').addEventListener('click',openAddPt);
+  document.getElementById('closePtModal').addEventListener('click',function(){closeOv('ptModal');});
+  document.getElementById('cancelPtBtn').addEventListener('click',function(){closeOv('ptModal');});
+  document.getElementById('savePtBtn').addEventListener('click',savePt);
+  document.getElementById('addSdBtn').addEventListener('click',function(){
+    var c=document.getElementById('sdContainer');
+    appendSdRow('','',c.children.length+1);
+    updateSessCount();
+  });
+  // Detail
+  document.getElementById('closeDetModal').addEventListener('click',function(){closeOv('detModal');});
+  document.getElementById('closeDetBtn').addEventListener('click',function(){closeOv('detModal');});
+  document.getElementById('detEditBtn').addEventListener('click',function(){if(viewPtId)editPt(viewPtId);});
+  document.getElementById('detDelBtn').addEventListener('click',function(){if(viewPtId)delPt(viewPtId);});
+  // Doctor
+  document.getElementById('addDocBtn').addEventListener('click',openAddDoc);
+  document.getElementById('closeDocModal').addEventListener('click',function(){closeOv('docModal');});
+  document.getElementById('cancelDocBtn').addEventListener('click',function(){closeOv('docModal');});
+  document.getElementById('saveDocBtn').addEventListener('click',saveDoc);
+  // User
+  document.getElementById('addUserBtn').addEventListener('click',openAddUser);
+  document.getElementById('closeUserModal').addEventListener('click',function(){closeOv('userModal');});
+  document.getElementById('cancelUserBtn').addEventListener('click',function(){closeOv('userModal');});
+  document.getElementById('saveUserBtn').addEventListener('click',saveUser);
+  document.getElementById('u-role').addEventListener('change',function(){
+    document.getElementById('u-doc-link-wrap').style.display=this.value==='doctor'?'flex':'none';
+  });
+  // Search
+  document.getElementById('ptSearch').addEventListener('input',renderPts);
+  document.getElementById('filterDoc').addEventListener('change',renderPts);
+  document.getElementById('filterStatus').addEventListener('change',renderPts);
+  // Backdrop close
+  ['ptModal','detModal','docModal','userModal'].forEach(function(id){
+    document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeOv(id);});
+  });
+});
+</script>
+</body>
+</html>
