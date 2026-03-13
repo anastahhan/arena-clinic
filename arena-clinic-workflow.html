@@ -604,25 +604,30 @@ document.getElementById('faCreateBtn').addEventListener('click', async function(
   if (!name) { errEl.textContent = 'Please enter your full name.'; errEl.style.display = 'block'; return; }
   if (!email) { errEl.textContent = 'Please enter your email.'; errEl.style.display = 'block'; return; }
   if (!pass) { errEl.textContent = 'Please enter your password.'; errEl.style.display = 'block'; return; }
-  btn.textContent = 'Setting up...';
+  btn.textContent = 'Step 1: Signing in...';
   btn.disabled = true;
+  errEl.style.display = 'none';
   try {
     var uid;
     try {
+      btn.textContent = 'Step 1: Creating account...';
       var cred = await createUserWithEmailAndPassword(auth, email, pass);
       uid = cred.user.uid;
     } catch(e) {
       if (e.code === 'auth/email-already-in-use') {
+        btn.textContent = 'Step 1: Signing in...';
         var cred2 = await signInWithEmailAndPassword(auth, email, pass);
         uid = cred2.user.uid;
       } else { throw e; }
     }
+    btn.textContent = 'Step 2: Saving profile...';
     await setDoc(doc(db, 'users', uid), { name: name, email: email, role: 'admin', createdAt: serverTimestamp() });
+    btn.textContent = 'Step 3: Loading app...';
     currentProfile = { name: name, email: email, role: 'admin' };
     document.getElementById('firstAdminScreen').classList.add('hidden');
     showApp();
   } catch(e) {
-    errEl.textContent = e.message;
+    errEl.textContent = 'Error: ' + e.code + ' — ' + e.message;
     errEl.style.display = 'block';
     btn.textContent = 'Create Admin Account →';
     btn.disabled = false;
