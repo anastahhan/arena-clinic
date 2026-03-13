@@ -540,31 +540,32 @@ function startAuthListener() {
     document.getElementById('loadingScreen').classList.add('hidden');
     if (user) {
       currentUser = user;
-      var profileDoc = await getDoc(doc(db, 'users', user.uid));
-      if (profileDoc.exists()) {
-        currentProfile = profileDoc.data();
-        showApp();
-      } else {
-        // User exists in Auth but not in Firestore yet
-        // Check if there are ANY users in Firestore already
-        var usersSnap = await getDocs(collection(db, 'users'));
-        if (usersSnap.empty) {
-          // No users at all - this is truly the first admin setup
-          document.getElementById('firstAdminScreen').classList.remove('hidden');
+      try {
+        var profileDoc = await getDoc(doc(db, 'users', user.uid));
+        if (profileDoc.exists()) {
+          currentProfile = profileDoc.data();
+          document.getElementById('firstAdminScreen').classList.add('hidden');
+          document.getElementById('loginScreen').classList.add('hidden');
+          showApp();
         } else {
-          // Users exist but this one has no profile - sign them out and show login
-          await signOut(auth);
-          showLogin();
+          // Signed in but no Firestore profile yet
+          var usersSnap = await getDocs(collection(db, 'users'));
+          if (usersSnap.empty) {
+            document.getElementById('firstAdminScreen').classList.remove('hidden');
+          } else {
+            await signOut(auth);
+            showLogin();
+          }
         }
+      } catch(e) {
+        document.getElementById('firstAdminScreen').classList.remove('hidden');
       }
     } else {
       currentUser = null;
       currentProfile = null;
-      // Check if any users exist to decide what screen to show
       try {
         var usersSnap2 = await getDocs(collection(db, 'users'));
         if (usersSnap2.empty) {
-          // No users yet - need to create first admin via sign-in attempt
           document.getElementById('firstAdminScreen').classList.remove('hidden');
         } else {
           showLogin();
@@ -625,7 +626,8 @@ document.getElementById('faCreateBtn').addEventListener('click', async function(
     btn.textContent = 'Step 3: Loading app...';
     currentProfile = { name: name, email: email, role: 'admin' };
     document.getElementById('firstAdminScreen').classList.add('hidden');
-    showApp();
+    // Force a clean reload so the auth listener picks up the logged-in state
+    window.location.reload();
   } catch(e) {
     errEl.textContent = 'Error: ' + e.code + ' — ' + e.message;
     errEl.style.display = 'block';
